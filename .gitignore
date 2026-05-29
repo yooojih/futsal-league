@@ -1,0 +1,12 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# アップロードされた一時CSVファイル
+data/*.csv
+data/*.xlsx
+
+# 作業状態ファイル（ローカル専用。Renderでは使えないため除外）
+data/season_state.json

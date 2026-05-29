@@ -234,6 +234,48 @@ with st.sidebar:
         st.success("リセットしました")
         st.rerun()
 
+    st.markdown("---")
+    st.subheader("📦 状態のエクスポート / インポート")
+    st.caption("別環境（Renderなど）への移行や、バックアップに使用します。")
+
+    # エクスポート: 現在の state をそのままダウンロード
+    _state_json_bytes = json.dumps(state, ensure_ascii=False, indent=2).encode("utf-8")
+    st.download_button(
+        label="📤 状態ファイルをダウンロード",
+        data=_state_json_bytes,
+        file_name="season_state.json",
+        mime="application/json",
+        help="確定試合・消化数・作業中の期を含む状態ファイルを保存します。",
+    )
+
+    # インポート: アップロードした JSON を state に反映
+    if "state_import_key" not in st.session_state:
+        st.session_state.state_import_key = 0
+    _state_import_file = st.file_uploader(
+        "📥 状態ファイルを読み込む",
+        type=["json"],
+        key=f"state_import_{st.session_state.state_import_key}",
+        help="別環境からエクスポートした season_state.json を読み込みます。現在の状態は上書きされます。",
+    )
+    if _state_import_file is not None:
+        try:
+            _imported_state = json.loads(_state_import_file.read().decode("utf-8"))
+            if isinstance(_imported_state, dict):
+                state.clear()
+                state.update(_imported_state)
+                save_state(state)
+                # セッション状態をクリアして復元フローに乗せる
+                for _k in ["unified_result", "avails", "confirmed", "pre_played_matches",
+                           "period_name", "excluded_dates", "max_games", "all_dates"]:
+                    st.session_state.pop(_k, None)
+                st.session_state.state_import_key += 1
+                st.success("状態ファイルを読み込みました。")
+                st.rerun()
+            else:
+                st.error("形式が正しくありません（dictが必要です）。")
+        except Exception as _import_err:
+            st.error(f"読み込みエラー: {_import_err}")
+
 
 # ------------------------------------------------------------------
 # メイン: 保存済み作業状態の復元
